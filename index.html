@@ -1,1 +1,633 @@
 
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" /> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>长滨联邦 The Changbin Federation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;900&family=Noto+Sans+SC:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+    /* =========================================
+       0. 核心宇宙 (Core Universe CSS)
+       ========================================= */
+    :root {
+        --c-bg: #000000; /* 极致黑背景 */
+        --c-surface: #1d1d1f;
+        --c-text-main: #f5f5f7;
+        --c-text-muted: #86868b;
+        --c-accent: #2997ff; /* Apple Pro Blue */
+        --c-gold: #d4af37; /* 联邦金 */
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --glass: rgba(20, 20, 20, 0.7);
+    }
+
+    /* Light / White theme variables (kept but theme toggle removed per request) */
+    body.light-theme {
+        --c-bg: #ffffff;
+        --c-surface: #f6f7fb;
+        --c-text-main: #0b0b0d;
+        --c-text-muted: #6b7280;
+        --c-accent: #1e6fff;
+        --c-gold: #b8871f;
+        --glass: rgba(255,255,255,0.7);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; cursor: default; }
+    
+    body {
+        background-color: var(--c-bg);
+        color: var(--c-text-main);
+        font-family: "Inter", "Noto Sans SC", -apple-system, sans-serif;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* 滚动条美化 */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--c-bg); }
+    ::-webkit-scrollbar-thumb { background: #8a8a8a; border-radius: 4px; }
+
+    /* =========================================
+       1. 加载动画 (The Launcher)
+       ========================================= */
+    #loader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--c-bg); z-index: 9999;
+        display: flex; justify-content: center; align-items: center;
+        flex-direction: column;
+        transition: opacity 0.8s ease, visibility 0.8s;
+    }
+    .loader-logo {
+        font-size: 24px; font-weight: 700; letter-spacing: 2px;
+        background: linear-gradient(90deg, #fff, #666, #fff);
+        -webkit-background-clip: text; color: transparent;
+        background-size: 200% 100%;
+        animation: shine 2s infinite linear;
+    }
+    .loader-line {
+        width: 0; height: 2px; background: var(--c-accent); margin-top: 20px;
+        animation: loadLine 1.5s var(--ease-out) forwards;
+    }
+    @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
+    @keyframes loadLine { 0% { width: 0; } 100% { width: 200px; } }
+
+    /* =========================================
+       2. 导航系统 (Dynamic Island Nav)
+       ========================================= */
+    .navbar {
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        width: auto; padding: 12px 18px;
+        background: rgba(40, 40, 40, 0.6);
+        backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+        border-radius: 100px; border: 1px solid rgba(255,255,255,0.1);
+        z-index: 1000; display: flex; align-items: center; gap: 16px;
+        transition: all 0.3s var(--ease-out);
+    }
+    body.light-theme .navbar {
+        background: rgba(255,255,255,0.7);
+        border-color: rgba(0,0,0,0.06);
+    }
+    .navbar:hover { background: rgba(50, 50, 50, 0.8); border-color: rgba(255,255,255,0.2); }
+    
+    .nav-logo { font-weight: 700; font-size: 14px; letter-spacing: 1px; }
+    .nav-items { display: flex; gap: 18px; align-items: center; }
+    .nav-item { 
+        font-size: 12px; color: var(--c-text-muted); transition: 0.3s; cursor: pointer; position: relative;
+    }
+    .nav-item:hover, .nav-item.active { color: var(--c-text-main); }
+    .nav-item.active::after {
+        content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+        width: 4px; height: 4px; background: var(--c-accent); border-radius: 50%;
+    }
+
+    /* action buttons in navbar (translate) */
+    .nav-actions { display: flex; gap: 10px; align-items: center; margin-left: 6px; }
+    .nav-action-btn {
+        background: transparent; border: 1px solid rgba(255,255,255,0.08); color: var(--c-text-main);
+        padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer;
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .nav-action-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.03); }
+    body.light-theme .nav-action-btn { border-color: rgba(0,0,0,0.06); color: var(--c-text-main); }
+
+    /* =========================================
+       3. 视觉组件 (Visual Components)
+       ========================================= */
+    .section { display: none; opacity: 0; transition: opacity 0.8s ease; padding-top: 100px; }
+    .section.active { display: block; opacity: 1; }
+
+    /* 巨幕标题 */
+    .hero-title {
+        font-size: 80px; font-weight: 800; line-height: 1.05;
+        background: linear-gradient(180deg, #fff 0%, #888 100%);
+        -webkit-background-clip: text; color: transparent;
+        margin-bottom: 20px; letter-spacing: -2px;
+        opacity: 0; transform: translateY(50px);
+        animation: slideUp 1s var(--ease-out) 0.5s forwards;
+    }
+    
+    /* Bento Grid */
+    .bento-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+        max-width: 1200px; margin: 0 auto; padding: 40px 20px;
+    }
+    .bento-card {
+        background: #111; border-radius: 28px; overflow: hidden; position: relative;
+        transition: transform 0.4s var(--ease-out), box-shadow 0.4s;
+        border: 1px solid rgba(255,255,255,0.05);
+        cursor: pointer; min-height: 300px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .bento-card:hover { transform: scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,0.3); z-index: 2; border-color: rgba(255,255,255,0.2); }
+    /* 修改：图片不裁剪，尽量完整展示（object-fit: contain） */
+    .bento-card img {
+        width: 100%; height: auto; object-fit: contain; object-position: center; opacity: 0.9; transition: 0.6s;
+        display: block;
+        background: transparent;
+    }
+    .bento-card:hover img { opacity: 1; transform: scale(1.02); }
+
+    .card-content {
+        position: absolute; bottom: 0; left: 0; padding: 30px; width: 100%;
+        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    }
+    .card-label { font-size: 11px; font-weight: 700; color: var(--c-accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .card-h { font-size: 24px; font-weight: 600; margin-bottom: 6px; color: #fff; }
+    .card-p { font-size: 14px; color: #aaa; line-height: 1.4; }
+
+    .span-2 { grid-column: span 2; }
+    .span-4 { grid-column: span 4; min-height: 500px; display:flex; align-items:center; justify-content:center; }
+
+    /* 详情页排版 */
+    .detail-hero {
+        height: 70vh; width: 100%; position: relative; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+    }
+    /* 修改：不裁剪大图 */
+    .detail-bg {
+        position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; object-position: center;
+        filter: brightness(0.5);
+    }
+    .detail-text { z-index: 2; text-align: center; max-width: 800px; }
+    .detail-text h1 { font-size: 64px; letter-spacing: -1px; margin-bottom: 20px; }
+    .detail-text p { font-size: 20px; color: #ccc; }
+
+    .feature-section {
+        max-width: 1000px; margin: 100px auto; padding: 0 20px;
+        display: flex; align-items: center; gap: 80px;
+    }
+    .feature-section.rev { flex-direction: row-reverse; }
+    .f-info { flex: 1; }
+    .f-info h2 { font-size: 40px; margin-bottom: 20px; }
+    .f-info p { font-size: 17px; color: #888; line-height: 1.6; margin-bottom: 30px; }
+    .f-media { flex: 1.5; border-radius: 20px; overflow: hidden; position: relative; display:flex; align-items:center; justify-content:center; padding:10px; background: transparent; }
+    /* 修改：不裁剪 feature images */
+    .f-media img { width:100%; height:auto; object-fit: contain; object-position:center; transition: 0.5s; display:block; }
+    .f-media:hover img { transform: scale(1.03); }
+
+    /* 数据高亮 */
+    .data-highlight {
+        display: inline-block; padding: 4px 8px; background: rgba(41, 151, 255, 0.1);
+        color: var(--c-accent); border-radius: 6px; font-weight: 600; font-size: 0.9em;
+    }
+
+    @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
+    .btn-glow {
+        margin-top: 30px; padding: 16px 40px; background: #fff; color: #000;
+        border-radius: 100px; font-weight: 600; font-size: 18px; transition: 0.3s;
+        box-shadow: 0 0 20px rgba(255,255,255,0.2); display: inline-block;
+        text-decoration: none;
+    }
+    .btn-glow:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255,255,255,0.4); }
+
+    /* small responsiveness */
+    @media (max-width: 980px) {
+        .bento-grid { grid-template-columns: repeat(2, 1fr); }
+        .span-2 { grid-column: span 2; }
+        .hero-title { font-size: 48px; }
+    }
+    @media (max-width: 600px) {
+        .bento-grid { grid-template-columns: 1fr; }
+        .span-2, .span-4 { grid-column: span 1; }
+        .navbar { left: 12px; transform: none; right: 12px; width: auto; }
+    }
+
+</style>
+</head>
+<body>
+<div id="loader">
+    <div class="loader-logo">CHANGBIN FEDERATION</div>
+    <div class="loader-line"></div>
+</div>
+
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-logo">🇨🇧 长滨联邦</div>
+    <div class="nav-items" role="menubar" aria-hidden="false">
+        <div class="nav-item active" onclick="go('home')" data-i18n="nav_home">总览</div>
+        <div class="nav-item" onclick="go('study')" data-i18n="nav_study">教育科研</div>
+        <div class="nav-item" onclick="go('transport')" data-i18n="nav_transport">立体交通</div>
+        <div class="nav-item" onclick="go('tourism')" data-i18n="nav_tourism">生活方式</div>
+    </div>
+
+    <!-- 保留：翻译按钮（黑白模式切换已删除） -->
+    <div class="nav-actions" style="margin-left:8px;">
+        <button class="nav-action-btn" id="langBtn" aria-pressed="false" title="翻译/Translate" onclick="toggleLang()">翻译</button>
+    </div>
+</nav>
+
+<div id="home" class="section active">
+    <div style="position: relative; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; margin-top: -100px;">
+        <img src="images/图片_20251121002459_79_12.jpg" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; opacity: 0.4; z-index: -1;" alt="">
+        <h1 class="hero-title" id="heroTitle">定义未来城市</h1>
+        <p id="heroSub" style="font-size: 24px; color: #ccc; max-width: 600px; margin: 0 auto; opacity: 0; animation: slideUp 1s var(--ease-out) 0.8s forwards;">长滨联邦，一座融合了生态奇迹与尖端科技的梦想之都。</p>
+        <a class="btn-glow" id="heroCTA" onclick="go('tourism')" style="opacity: 0; animation: slideUp 1s var(--ease-out) 1s forwards; cursor: pointer;">开始探索</a>
+    </div>
+
+    <div style="border-top: 1px solid #333; border-bottom: 1px solid #333; background: #0a0a0a;">
+        <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; padding: 60px 0;">
+            <div><h2 style="font-size: 48px; color: #fff;">NO.1</h2><p style="color: #666; text-transform: uppercase;">农业科研评级</p></div>
+            <div><h2 style="font-size: 48px; color: #fff;">98%</h2><p style="color: #666; text-transform: uppercase;">城市绿化覆盖</p></div>
+            <div><h2 style="font-size: 48px; color: #fff;">6+1</h2><p style="color: #666; text-transform: uppercase;">立体交通网</p></div>
+            <div><h2 style="font-size: 48px; color: #fff;">AAA</h2><p style="color: #666; text-transform: uppercase;">主权信用评级</p></div>
+        </div>
+    </div>
+
+    <div class="bento-grid">
+        <div class="bento-card span-2" onclick="go('study')">
+            <img src="images/图片_20251121002504_82_12.jpg" alt="">
+            <div class="card-content">
+                <div class="card-label">EDUCATION</div>
+                <div class="card-h" id="card1_h">长滨大学</div>
+                <div class="card-p" id="card1_p">不仅是一所大学，更是联邦的大脑。探索我们的农科楼与国家级实验室。</div>
+            </div>
+        </div>
+        <div class="bento-card" onclick="go('transport')">
+            <img src="images/图片_20251121002501_80_12.jpg" alt="">
+            <div class="card-content">
+                <div class="card-label">TRANSIT</div>
+                <div class="card-h" id="card2_h">水上航空</div>
+                <div class="card-p" id="card2_p">连接岛屿的浪漫航线。</div>
+            </div>
+        </div>
+        <div class="bento-card" onclick="go('tourism')">
+            <img src="images/图片_20251121002502_81_12.jpg" alt="">
+            <div class="card-content">
+                <div class="card-label">LIVING</div>
+                <div class="card-h" id="card3_h">樱花与城</div>
+                <div class="card-p" id="card3_p">现代建筑与自然的诗意共鸣。</div>
+            </div>
+        </div>
+        <div class="bento-card span-4" onclick="go('transport')">
+            <img src="images/图片_20251121002510_86_12.jpg" style="object-position: center bottom;" alt="">
+            <div class="card-content">
+                <div class="card-label">GLOBAL HUB</div>
+                <div class="card-h" id="card4_h">世嘉堡国际空港 (SCIA)</div>
+                <div class="card-p" id="card4_p">联邦的空中门户。双跑道配置，年吞吐量千万级，连接全球主要经济体。</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="study" class="section">
+    <div class="detail-hero">
+        <!-- 图片位置已与下方第一张 feature 图互换（按用户要求） -->
+        <img src="images/图片_20251121002504_82_12.jpg" class="detail-bg" alt="">
+        <div class="detail-text">
+            <div style="color: var(--c-accent); font-weight: 700; letter-spacing: 2px; margin-bottom: 10px;">ACADEMIC EXCELLENCE</div>
+            <h1 id="study_h1">长滨大学</h1>
+            <p id="study_p">这里不只是传授知识，我们在重新定义知识。</p>
+        </div>
+    </div>
+
+    <div class="feature-section">
+        <div class="f-info">
+            <h2 id="agri_h">农业科学院：生命的工程师</h2>
+            <p id="agri_p">长滨大学农学院拥有全联邦最先进的<span class="data-highlight">封闭式生态循环系统</span>。如左图所示，我们的农业大楼本身就是一个巨大的实验器材。</p>
+            <p>在这里，我们不仅仅是在种植作物，我们是在通过基因编辑和垂直农业技术，解决全球粮食安全问题。我们提供从本科到博士后的全链路培养计划。</p>
+        </div>
+        <div class="f-media">
+            <!-- 与 detail-hero 的图片互换 -->
+            <img src="images/图片_20251121002507_84_12.jpg" alt="">
+        </div>
+    </div>
+
+    <div class="feature-section rev">
+        <div class="f-info">
+            <h2 id="teach_h">沉浸式小班教学</h2>
+            <p id="teach_p">告别千人一面的大课堂。长滨大学坚持<span class="data-highlight">1:8 师生比</span>的精英教育模式。</p>
+            <p>我们的阶梯教室（如图）采用声学优化设计和原木内饰，旨在激发每一位学生的辩证思维。在这里，每一次举手提问，都是一次思想的碰撞。</p>
+        </div>
+        <div class="f-media">
+            <img src="images/图片_20251121002509_85_12.jpg" alt="">
+        </div>
+    </div>
+</div>
+
+<div id="transport" class="section">
+    <div class="detail-hero">
+        <img src="images/图片_20251121002512_87_12.jpg" class="detail-bg" alt="">
+        <div class="detail-text">
+            <div style="color: var(--c-accent); font-weight: 700; letter-spacing: 2px; margin-bottom: 10px;">INFRASTRUCTURE</div>
+            <h1 id="transport_h1">立体交通网</h1>
+            <p id="transport_p">速度，是经济的脉搏。</p>
+        </div>
+    </div>
+
+    <div class="feature-section">
+        <div class="f-info">
+            <h2 id="scia_h">世嘉堡国际空港</h2>
+            <p id="scia_p">这不仅是一座机场，这是一座航空城。SCIA 拥有<span class="data-highlight">双4F级跑道</span>，可起降目前世界上最大的客机。</p>
+            <p>20+ 个近机位配备了最新的智能廊桥系统。无论是商务出行还是国际货运，世嘉堡都是最高效的中转站。其独特的玻璃幕墙设计，让候机成为一种视觉享受。</p>
+        </div>
+        <div class="f-media">
+            <img src="images/图片_20251121002510_86_12.jpg" alt="">
+        </div>
+    </div>
+
+    <div class="feature-section rev">
+        <div class="f-info">
+            <h2 id="metro_h">地下大动脉</h2>
+            <p id="metro_p">长滨的地下是一个精密的时钟。我们的轨道交通系统包含<span class="data-highlight">5条地铁线 + 1条市域快线</span>。</p>
+            <p>从图中的线路规划可以看出，无论是前往大学城（蓝线）、港口（红线）还是市中心CBD（黄线），都在30分钟通勤圈内。这是城市效率的极致体现。</p>
+        </div>
+        <div class="f-media" style="background: #111; padding: 20px;">
+            <img src="images/图片_20251121002513_88_12.jpg" style="object-fit: contain;" alt="">
+        </div>
+    </div>
+
+     <div class="feature-section">
+        <div class="f-info">
+            <h2 id="seaplane_h">上滨东港水上机场</h2>
+            <p id="seaplane_p">除了陆地和天空，我们还征服了海洋。上滨东港是区域内最繁忙的水上飞机枢纽。</p>
+            <p>它主要服务于岛际通勤和高端旅游观光。乘坐水上飞机，您将以独特的视角俯瞰整个长滨联邦的壮丽海岸线。</p>
+        </div>
+        <div class="f-media">
+            <img src="images/图片_20251121002501_80_12.jpg" alt="">
+        </div>
+    </div>
+</div>
+
+<div id="tourism" class="section">
+    <div class="detail-hero">
+        <img src="images/图片_20251121002502_81_12.jpg" class="detail-bg" alt="">
+        <div class="detail-text">
+            <div style="color: var(--c-accent); font-weight: 700; letter-spacing: 2px; margin-bottom: 10px;">LIFESTYLE & FUTURE</div>
+            <h1 id="tourism_h1">生活在长滨</h1>
+            <p id="tourism_p">四大支柱产业支撑起的繁荣与安宁。</p>
+        </div>
+    </div>
+
+    <div style="max-width: 800px; margin: 80px auto; text-align: center;">
+        <p style="font-size: 24px; color: #fff; line-height: 1.6;" id="tourism_quote">
+            "长滨联邦不仅仅是一个国家，它是一种生活方式的宣言。依托<span style="color:var(--c-accent)">服务业、旅游业、交通业、矿业</span>四大经济引擎，我们构建了一个高福利、高增长的社会模型。"
+        </p>
+    </div>
+
+    <div class="bento-grid">
+        <div class="bento-card span-2" style="cursor: default;">
+            <img src="images/图片_20251121002459_79_12.jpg" alt="">
+            <div class="card-content">
+                <div class="card-label">CITYSCAPE</div>
+                <div class="card-h">摩天森林</div>
+                <div class="card-p">我们的天际线，是经济腾飞的各种写照。</div>
+            </div>
+        </div>
+        <div class="bento-card span-2" style="cursor: default;">
+            <img src="images/图片_20251121002502_81_12.jpg" alt="">
+            <div class="card-content">
+                <div class="card-label">NATURE</div>
+                <div class="card-h">樱花岛</div>
+                <div class="card-p">即便在市中心，也能找到紫色的浪漫。</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin: 100px 0;">
+        <h2 style="font-size: 40px; margin-bottom: 30px;">准备好加入我们了吗？</h2>
+        <p style="color: #888; margin-bottom: 40px;">长滨联邦欢迎全球人才。无论是求学、投资还是定居，这里都有无限可能。</p>
+        <!-- 删除：查看移民指引（按用户之前要求删除） -->
+    </div>
+</div>
+
+<footer style="border-top: 1px solid #222; padding: 80px 0; text-align: center; color: #444;">
+    <div style="font-weight: 700; color: #fff; font-size: 16px; margin-bottom: 10px;">🇨🇧 THE CHANGBIN FEDERATION</div>
+    <p>© 2025 Federal Government. Official Portal.</p>
+</footer>
+
+<script>
+    // 1. 加载动画逻辑（保留原动画逻辑）
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            document.getElementById('loader').style.opacity = '0';
+            document.getElementById('loader').style.visibility = 'hidden';
+            // 触发首页动画
+            try { document.querySelector('.hero-title').style.animationPlayState = 'running'; } catch (e) {}
+        }, 1500);
+    });
+
+    // 2. 路由逻辑（保留并不更改核心行为）
+    function go(pageId) {
+        // 滚动回顶
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // 切换导航状态
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        // 简单的匹配逻辑
+        const navItems = document.querySelectorAll('.nav-item');
+        if(pageId === 'home') navItems[0].classList.add('active');
+        if(pageId === 'study') navItems[1].classList.add('active');
+        if(pageId === 'transport') navItems[2].classList.add('active');
+        if(pageId === 'tourism' || pageId === 'immigration') navItems[3].classList.add('active');
+
+        // 切换页面
+        document.querySelectorAll('.section').forEach(el => {
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.classList.remove('active');
+                if(el.id === pageId) {
+                    el.classList.add('active');
+                    setTimeout(() => { el.style.opacity = 1; }, 50);
+                }
+            }, 400); // 等待淡出动画完成
+        });
+
+        // 保持原本逻辑（已实现）
+    }
+
+    // ========== 新增：翻译（中/英）切换功能（保留） ==========
+    // 注意：初始页面保持原始中文文本，点击后会将一组关键文本转换为英文，再次点击切回中文。
+    const langBtn = document.getElementById('langBtn');
+    let isEn = false;
+    function toggleLang() {
+        isEn = !isEn;
+        langBtn.setAttribute('aria-pressed', String(isEn));
+        if (isEn) {
+            langBtn.textContent = 'EN';
+            applyEnglish();
+        } else {
+            langBtn.textContent = '翻译';
+            applyChinese();
+        }
+    }
+
+    function applyEnglish() {
+        // Nav
+        const nav = document.querySelectorAll('.nav-item');
+        if(nav[0]) nav[0].textContent = 'Overview';
+        if(nav[1]) nav[1].textContent = 'Education';
+        if(nav[2]) nav[2].textContent = 'Transit';
+        if(nav[3]) nav[3].textContent = 'Lifestyle';
+
+        // Hero
+        const heroTitle = document.getElementById('heroTitle');
+        const heroSub = document.getElementById('heroSub');
+        const heroCTA = document.getElementById('heroCTA');
+        if(heroTitle) heroTitle.textContent = 'Defining the City of the Future';
+        if(heroSub) heroSub.textContent = 'The Changbin Federation — a dream metropolis where ecological wonders meet cutting-edge technology.';
+        if(heroCTA) heroCTA.textContent = 'Explore';
+
+        // Cards
+        const c1h = document.getElementById('card1_h');
+        const c1p = document.getElementById('card1_p');
+        const c2h = document.getElementById('card2_h');
+        const c2p = document.getElementById('card2_p');
+        const c3h = document.getElementById('card3_h');
+        const c3p = document.getElementById('card3_p');
+        const c4h = document.getElementById('card4_h');
+        const c4p = document.getElementById('card4_p');
+        if(c1h) c1h.textContent = 'Changbin University';
+        if(c1p) c1p.textContent = 'More than a university — the federation\'s brain. Explore our agri-labs and national research centers.';
+        if(c2h) c2h.textContent = 'Seaplane Network';
+        if(c2p) c2p.textContent = 'Romantic island connections by air.';
+        if(c3h) c3h.textContent = 'Sakura City';
+        if(c3p) c3p.textContent = 'A poetic resonance of modern architecture and nature.';
+        if(c4h) c4h.textContent = 'Seagabour International Airport (SCIA)';
+        if(c4p) c4p.textContent = 'The federation\'s aerial gateway: dual runways, tens of millions annual capacity, linking major global economies.';
+
+        // Study page
+        const s_h1 = document.getElementById('study_h1');
+        const s_p = document.getElementById('study_p');
+        const agri_h = document.getElementById('agri_h');
+        const agri_p = document.getElementById('agri_p');
+        const teach_h = document.getElementById('teach_h');
+        const teach_p = document.getElementById('teach_p');
+        if(s_h1) s_h1.textContent = 'Changbin University';
+        if(s_p) s_p.textContent = 'This is not just teaching — we are redefining knowledge.';
+        if(agri_h) agri_h.textContent = 'College of Agriculture: Engineers of Life';
+        if(agri_p) agri_p.textContent = 'Our agricultural faculty operates the federation\'s most advanced closed-loop ecological systems.';
+        if(teach_h) teach_h.textContent = 'Immersive Small-Class Teaching';
+        if(teach_p) teach_p.textContent = 'Goodbye mass lectures — we maintain an elite 1:8 student-teacher ratio.';
+
+        // Transport page
+        const t_h1 = document.getElementById('transport_h1');
+        const t_p = document.getElementById('transport_p');
+        const scia_h = document.getElementById('scia_h');
+        const scia_p = document.getElementById('scia_p');
+        const metro_h = document.getElementById('metro_h');
+        const metro_p = document.getElementById('metro_p');
+        const seaplane_h = document.getElementById('seaplane_h');
+        const seaplane_p = document.getElementById('seaplane_p');
+        if(t_h1) t_h1.textContent = 'Three-Dimensional Transit Network';
+        if(t_p) t_p.textContent = 'Speed is the pulse of the economy.';
+        if(scia_h) scia_h.textContent = 'Seagabour International Airport';
+        if(scia_p) scia_p.textContent = 'More than an airport — an aerotropolis with dual 4F runways.';
+        if(metro_h) metro_h.textContent = 'Underground Arteries';
+        if(metro_p) metro_p.textContent = 'Our rail network includes 5 metro lines + 1 regional express.';
+        if(seaplane_h) seaplane_h.textContent = 'Shangbin East Seaplane Port';
+        if(seaplane_p) seaplane_p.textContent = 'A busy seaplane hub serving island commutes and premium tourism.';
+
+        // Tourism page
+        const tour_h1 = document.getElementById('tourism_h1');
+        const tour_p = document.getElementById('tourism_p');
+        const tour_quote = document.getElementById('tourism_quote');
+        if(tour_h1) tour_h1.textContent = 'Life in Changbin';
+        if(tour_p) tour_p.textContent = 'Supported by four pillar industries, prosperity and tranquility.';
+        if(tour_quote) tour_quote.textContent = '"The Changbin Federation is not just a country — it is a lifestyle statement. With service, tourism, transport and mining as our engines, we build a high-welfare, high-growth society."';
+    }
+
+    function applyChinese() {
+        // Nav
+        const nav = document.querySelectorAll('.nav-item');
+        if(nav[0]) nav[0].textContent = '总览';
+        if(nav[1]) nav[1].textContent = '教育科研';
+        if(nav[2]) nav[2].textContent = '立体交通';
+        if(nav[3]) nav[3].textContent = '生活方式';
+
+        // Hero
+        const heroTitle = document.getElementById('heroTitle');
+        const heroSub = document.getElementById('heroSub');
+        const heroCTA = document.getElementById('heroCTA');
+        if(heroTitle) heroTitle.textContent = '定义未来城市';
+        if(heroSub) heroSub.textContent = '长滨联邦，一座融合了生态奇迹与尖端科技的梦想之都。';
+        if(heroCTA) heroCTA.textContent = '开始探索';
+
+        // Cards
+        const c1h = document.getElementById('card1_h');
+        const c1p = document.getElementById('card1_p');
+        const c2h = document.getElementById('card2_h');
+        const c2p = document.getElementById('card2_p');
+        const c3h = document.getElementById('card3_h');
+        const c3p = document.getElementById('card3_p');
+        const c4h = document.getElementById('card4_h');
+        const c4p = document.getElementById('card4_p');
+        if(c1h) c1h.textContent = '长滨大学';
+        if(c1p) c1p.textContent = '不仅是一所大学，更是联邦的大脑。探索我们的农科楼与国家级实验室。';
+        if(c2h) c2h.textContent = '水上航空';
+        if(c2p) c2p.textContent = '连接岛屿的浪漫航线。';
+        if(c3h) c3h.textContent = '樱花与城';
+        if(c3p) c3p.textContent = '现代建筑与自然的诗意共鸣。';
+        if(c4h) c4h.textContent = '世嘉堡国际空港 (SCIA)';
+        if(c4p) c4p.textContent = '联邦的空中门户。双跑道配置，年吞吐量千万级，连接全球主要经济体。';
+
+        // Study page
+        const s_h1 = document.getElementById('study_h1');
+        const s_p = document.getElementById('study_p');
+        const agri_h = document.getElementById('agri_h');
+        const agri_p = document.getElementById('agri_p');
+        const teach_h = document.getElementById('teach_h');
+        const teach_p = document.getElementById('teach_p');
+        if(s_h1) s_h1.textContent = '长滨大学';
+        if(s_p) s_p.textContent = '这里不只是传授知识，我们在重新定义知识。';
+        if(agri_h) agri_h.textContent = '农业科学院：生命的工程师';
+        if(agri_p) agri_p.textContent = '长滨大学农学院拥有全联邦最先进的封闭式生态循环系统。';
+        if(teach_h) teach_h.textContent = '沉浸式小班教学';
+        if(teach_p) teach_p.textContent = '告别千人一面的大课堂。长滨大学坚持1:8 师生比的精英教育模式。';
+
+        // Transport page
+        const t_h1 = document.getElementById('transport_h1');
+        const t_p = document.getElementById('transport_p');
+        const scia_h = document.getElementById('scia_h');
+        const scia_p = document.getElementById('scia_p');
+        const metro_h = document.getElementById('metro_h');
+        const metro_p = document.getElementById('metro_p');
+        const seaplane_h = document.getElementById('seaplane_h');
+        const seaplane_p = document.getElementById('seaplane_p');
+        if(t_h1) t_h1.textContent = '立体交通网';
+        if(t_p) t_p.textContent = '速度，是经济的脉搏。';
+        if(scia_h) scia_h.textContent = '世嘉堡国际空港';
+        if(scia_p) scia_p.textContent = '这不仅是一座机场，这是一座航空城。SCIA 拥有双4F级跑道。';
+        if(metro_h) metro_h.textContent = '地下大动脉';
+        if(metro_p) metro_p.textContent = '长滨的地下是一个精密的时钟。我们的轨道交通系统包含5条地铁线 + 1条市域快线。';
+        if(seaplane_h) seaplane_h.textContent = '上滨东港水上机场';
+        if(seaplane_p) seaplane_p.textContent = '除了陆地和天空，我们还征服了海洋。上滨东港是区域内最繁忙的水上飞机枢纽。';
+
+        // Tourism page
+        const tour_h1 = document.getElementById('tourism_h1');
+        const tour_p = document.getElementById('tourism_p');
+        const tour_quote = document.getElementById('tourism_quote');
+        if(tour_h1) tour_h1.textContent = '生活在长滨';
+        if(tour_p) tour_p.textContent = '四大支柱产业支撑起的繁荣与安宁。';
+        if(tour_quote) tour_quote.textContent = '"长滨联邦不仅仅是一个国家，它是一种生活方式的宣言。依托服务业、旅游业、交通业、矿业四大经济引擎，我们构建了一个高福利、高增长的社会模型。"';
+    }
+
+    // 保证初始翻译按钮文本与状态一致（黑白模式功能已删除）
+    (function init() {
+        langBtn.textContent = '翻译';
+        langBtn.setAttribute('aria-pressed', 'false');
+    })();
+
+</script>
+</body>
+</html>
+
